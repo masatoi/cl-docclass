@@ -5,11 +5,13 @@
 (defpackage cl-docclass
   (:use :cl :cl-online-learning :cl-online-learning.utils :cl-online-learning.vector :wiz)
   (:nicknames :docclass)
-  (:shadow :shuffle-vector)
-  ;; (:export :hoge)
-  )
+  (:shadow :shuffle-vector))
 
 (in-package :cl-docclass)
+
+;; IPA辞書をダウンロード https://sourceforge.net/projects/mecab/files/mecab-ipadic/2.7.0-20070801/
+;; igo-0.4.5.jarをダウンロード https://osdn.net/projects/igo/downloads/55029/igo-0.4.5.jar/
+;; java -cp ./igo-0.4.5.jar net.reduls.igo.bin.BuildDic ipadic mecab-ipadic-2.7.0-20070801 EUC-JP
 
 ;; Read igo dictionary
 (igo:load-tagger (format-directory (merge-pathnames #P"igo/ipadic/" (user-homedir-pathname))))
