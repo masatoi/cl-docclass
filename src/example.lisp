@@ -75,8 +75,8 @@
                  (cons (test arow-learner train-vector)
                        (test arow-learner test-vector))))))
 
-(defparameter arow-learner-1vr (make-one-vs-rest (hash-table-count *word-hash*) 9 'sparse-arow 10d0))
-(time (defparameter result-1vr
+(defparameter arow-learner-1vr (make-one-vs-rest (hash-table-count *word-hash*) 9 'sparse-arow 0.1d0))
+(time (defparameter result-arow-1vr
         (loop repeat 50 collect
           (progn (train arow-learner-1vr train-vector)
                  (cons (test arow-learner-1vr train-vector)

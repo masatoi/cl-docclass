@@ -9,9 +9,18 @@
 
 (in-package :cl-docclass)
 
-;; IPA辞書をダウンロード https://sourceforge.net/projects/mecab/files/mecab-ipadic/2.7.0-20070801/
-;; igo-0.4.5.jarをダウンロード https://osdn.net/projects/igo/downloads/55029/igo-0.4.5.jar/
-;; java -cp ./igo-0.4.5.jar net.reduls.igo.bin.BuildDic ipadic mecab-ipadic-2.7.0-20070801 EUC-JP
+#| Prepare for cl-igo
+
+Download IPA dictionary for mecab
+$ wget https://sourceforge.net/projects/mecab/files/mecab-ipadic/2.7.0-20070801/
+
+Download igo-0.4.5.jar
+$ wget https://osdn.net/projects/igo/downloads/55029/igo-0.4.5.jar/
+
+Make Igo dictionary
+$ java -cp ./igo-0.4.5.jar net.reduls.igo.bin.BuildDic ipadic mecab-ipadic-2.7.0-20070801 EUC-JP
+
+|#
 
 ;; Read igo dictionary
 (igo:load-tagger (format-directory (merge-pathnames #P"igo/ipadic/" (user-homedir-pathname))))
