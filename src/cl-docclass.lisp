@@ -25,26 +25,29 @@
 			 (igo:parse text))))
 
 ;; word -> index hashtable
-(defvar *word-hash*)
-(defvar *word-index*)
-
-(defun add-words-to-hash! (file &optional (word-hash *word-hash*))
-  (let ((words (extract-word (alexandria:read-file-into-string file))))
+(defun add-words-to-hash! (text word-hash)
+  (let ((words (extract-word text)))
     (loop for word in words do
-      (when (null (gethash word word-hash))
-        (setf (gethash word word-hash) *word-index*)
-        (incf *word-index*)))))
+      (if (gethash word word-hash)
+          (incf (cdr (gethash word word-hash)))
+          (setf (gethash word word-hash) (cons (hash-table-count word-hash) 1))))))
 
-(defun init-word-hash! (files)
-  (setf *word-hash* (make-hash-table :test 'equal)
-        *word-index* 0)
-  (dolist (file files)
-    (add-words-to-hash! file *word-hash*))
-  *word-hash*)
+(defun add-words-to-hash-from-file! (file word-hash)
+  (add-words-to-hash! (alexandria:read-file-into-string file) word-hash))
 
-(defun make-word-count-vec (text &optional (word-hash *word-hash*))
+(defun remove-infrequent-words (word-hash threshold)
+  (let ((new-hash (make-hash-table :test 'equal)))
+    (maphash (lambda (key val)
+               (when (>= (cdr val) threshold)
+                 (setf (gethash key new-hash)
+                       (cons (hash-table-count new-hash) (cdr val)))))
+             word-hash)
+    new-hash))
+
+;; Count the number of words which appears in the text
+(defun make-word-count-vec (text word-hash)
   (let* ((words (extract-word text))
-         (indices (mapcar (lambda (w) (gethash w word-hash)) words))
+         (indices (remove nil (mapcar (lambda (w) (car (gethash w word-hash))) words)))
          (indices-unique (remove-duplicates indices :test #'=))
          (len (length indices-unique))
          (index-vector (make-array len :element-type 'fixnum :initial-contents indices-unique))
@@ -55,28 +58,23 @@
           (incf (aref value-vector i) 1d0))))
     (make-sparse-vector index-vector value-vector)))
 
-(defun sum-vec (vec)
-  (declare (type (simple-array double-float) vec))
-  (let ((sum 0d0))
-    (declare (type double-float sum))
-    (loop for i fixnum from 0 to (1- (length vec)) do
-      (incf sum (aref vec i)))
-    sum))
-
 (defun wc->tf! (wc-vec)
-  (let* ((value-vector (sparse-vector-value-vector wc-vec))
-         (sum (sum-vec value-vector)))
-    (loop for i from 0 to (1- (length value-vector)) do
-      (setf (aref value-vector i) (/ (aref value-vector i) sum)))
-    wc-vec))
+  (flet ((sum-vec (vec)
+           (declare (type (simple-array double-float) vec))
+           (let ((sum 0d0))
+             (declare (type double-float sum))
+             (loop for i fixnum from 0 to (1- (length vec)) do
+               (incf sum (aref vec i)))
+             sum)))
+    (let* ((value-vector (sparse-vector-value-vector wc-vec))
+           (sum (sum-vec value-vector)))
+      (loop for i from 0 to (1- (length value-vector)) do
+        (setf (aref value-vector i) (/ (aref value-vector i) sum)))
+      wc-vec)))
 
-(defun make-wc-vec-list-livedoor-data ()
-  (mapcar (lambda (file)
-            (make-word-count-vec (alexandria:read-file-into-string file)))
-          *livedoor-data-files*))
-
-(defun make-word-appear-doc-count-vec (dimension wc-vec-list)
-  (let ((doc-count-vec (make-array dimension :element-type 'double-float :initial-element 0d0)))
+;; Count the number of documents in which words appeared
+(defun make-doc-count-vec (word-count wc-vec-list)
+  (let ((doc-count-vec (make-array word-count :element-type 'double-float :initial-element 0d0)))
     (dolist (wc-vec wc-vec-list)
       (loop for i from 0 to (1- (sparse-vector-length wc-vec)) do
         (incf (aref doc-count-vec (aref (sparse-vector-index-vector wc-vec) i)) 1d0)))
@@ -89,14 +87,16 @@
             (+ (log (/ len (aref doc-count-vec i))) 1d0)))
     doc-count-vec))
 
-(defun make-tf-idf-list (files &optional (word-hash *word-hash*) (dimension *word-index*))
-  (let* ((wc-vec-list (mapcar
-                       (lambda (file)
-                         (make-word-count-vec (alexandria:read-file-into-string file) word-hash))
-                       files))
-         (doc-count-vec (make-word-appear-doc-count-vec dimension wc-vec-list)))
+(defun make-tf-idf-list (texts word-hash)
+  (let* ((wc-vec-list (mapcar (lambda (text) (make-word-count-vec text word-hash))
+                              texts))
+         (doc-count-vec (make-doc-count-vec (hash-table-count word-hash) wc-vec-list)))
     (doc-count-vec->idf! doc-count-vec)
     (dolist (wc-vec wc-vec-list)
       (wc->tf! wc-vec)
       (ds2s-v* doc-count-vec wc-vec wc-vec))
     wc-vec-list))
+
+(defun make-tf-idf-list-from-files (files word-hash)
+  (make-tf-idf-list (mapcar #'alexandria:read-file-into-string files)
+                    word-hash))
