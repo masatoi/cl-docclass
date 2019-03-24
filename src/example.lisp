@@ -1,22 +1,28 @@
-(in-package :cl-docclass)
+(defpackage livedoor-news-corpus
+  (:use :cl :cl-online-learning.vector :cl-online-learning :cl-docclass)
+  (:nicknames :livedoor)
+  (:shadow :shuffle-vector))
+
+(in-package :livedoor)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Examples
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defparameter *livedoor-data*
-  (list
-   (ls #P"/home/wiz/datasets/livedoor/text/kaden-channel/")
-   (ls #P"/home/wiz/datasets/livedoor/text/peachy/")
-   (ls #P"/home/wiz/datasets/livedoor/text/sports-watch/")
-   (ls #P"/home/wiz/datasets/livedoor/text/dokujo-tsushin/")
-   (ls #P"/home/wiz/datasets/livedoor/text/livedoor-homme/")
-   (ls #P"/home/wiz/datasets/livedoor/text/topic-news/")
-   (ls #P"/home/wiz/datasets/livedoor/text/it-life-hack/")
-   (ls #P"/home/wiz/datasets/livedoor/text/movie-enter/")
-   (ls #P"/home/wiz/datasets/livedoor/text/smax/")))
+(defparameter *livedoor-data-dir* #P"~/datasets/livedoor/text/")
 
-(defparameter *livedoor-data-files* (alexandria:flatten *livedoor-data*))
+(defparameter *news-site-names*
+  '("kaden-channel" "peachy" "sports-watch" "dokujo-tsushin" "livedoor-homme"
+    "topic-news" "it-life-hack" "movie-enter" "smax"))
+
+(defparameter *livedoor-data*
+  (mapcar (lambda (p)
+            (uiop:directory-files
+             (merge-pathnames (concatenate 'string p "/") *livedoor-data-dir*)))
+          *news-site-names*))
+
+(defparameter *livedoor-data-files*
+  (alexandria:flatten *livedoor-data*))
 
 ;;; Make dictionary (word-hash)
 
@@ -44,8 +50,7 @@
   (alexandria:flatten
    (loop for class-id from 0 to (1- (length *livedoor-data*))
          for dim in (mapcar #'length *livedoor-data*)
-         collect
-      (make-list dim :initial-element class-id))))
+         collect (make-list dim :initial-element class-id))))
 
 ;;; Shuffle dataset
 
@@ -63,8 +68,10 @@
                    (cons class-label tf-idf)))
     tv))
 
-(defparameter train-vector (subseq dataset-vector 0 6367))
-(defparameter test-vector (subseq dataset-vector 6367 7367)) ; 1000
+(defparameter train-vector (subseq dataset-vector 0 (- (length *livedoor-data-files*) 1000)))
+(defparameter test-vector (subseq dataset-vector
+                                  (- (length *livedoor-data-files*) 1000)
+                                  (length *livedoor-data-files*)))
 
 ;;; Define learner and train/test
 

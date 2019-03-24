@@ -3,9 +3,14 @@
 (in-package :cl-user)
 
 (defpackage cl-docclass
-  (:use :cl :cl-online-learning :cl-online-learning.utils :cl-online-learning.vector :wiz)
+  (:use :cl :cl-online-learning :cl-online-learning.utils :cl-online-learning.vector)
   (:nicknames :docclass)
-  (:shadow :shuffle-vector))
+  (:shadow :shuffle-vector)
+  (:export
+   :*igo-dict-dir* :load-igo-dict :extract-word
+   :add-words-to-hash! :add-words-to-hash-from-file!
+   :remove-infrequent-words
+   :make-tf-idf-list :make-tf-idf-list-from-files))
 
 (in-package :cl-docclass)
 
@@ -22,8 +27,11 @@ $ java -cp ./igo-0.4.5.jar net.reduls.igo.bin.BuildDic ipadic mecab-ipadic-2.7.0
 
 |#
 
+(defparameter *igo-dict-dir* (merge-pathnames #P"igo/ipadic/" (user-homedir-pathname)))
+
 ;; Read igo dictionary
-(igo:load-tagger (format-directory (merge-pathnames #P"igo/ipadic/" (user-homedir-pathname))))
+(defun load-igo-dict ()
+  (igo:load-tagger *igo-dict-dir*))
 
 (defun extract-word (text)
   (mapcar #'car
