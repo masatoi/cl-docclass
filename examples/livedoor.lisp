@@ -24,20 +24,10 @@
 (defparameter *livedoor-data-files*
   (alexandria:flatten *livedoor-data*))
 
-;;; Make dictionary (word-hash)
-
-(defparameter *word-hash* (make-hash-table :test 'equal))
-
-(dolist (file *livedoor-data-files*)
-  (add-words-to-hash-from-file! file *word-hash*))
-;; 6.147 seconds of real time
-
-;; Removes infrequent words
-(setf *word-hash* (remove-infrequent-words *word-hash* 10))
-
 ;;; Make input data (List of sparse vectors)
 
-(defparameter tf-idf-list (make-tf-idf-list-from-files *livedoor-data-files* *word-hash*))
+(defparameter tf-idf-list
+  (make-tf-idf-list-from-files *livedoor-data-files* :infrequent-threshold 10))
 ;; 10.589 seconds of real time
 
 ;; ;; Actual dimension histogram
@@ -75,7 +65,7 @@
 
 ;;; Define learner and train/test
 
-(defparameter arow-learner (make-one-vs-one (hash-table-count *word-hash*) 9 'sparse-arow 5d0))
+(defparameter arow-learner (make-one-vs-one (hash-table-count *word-hash*) 9 'sparse-arow 5.0))
 (time (defparameter result
         (loop repeat 50 collect
           (progn (train arow-learner train-vector)

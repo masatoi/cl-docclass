@@ -11,7 +11,7 @@
   :version "0.1"
   :author "Satoshi Imai"
   :license "MIT"
-  :depends-on (:igo :cl-online-learning :alexandria)
+  :depends-on (:igo :cl-online-learning :alexandria :cl-store)
   :components ((:module "src"
                 :components
                 ((:file "cl-docclass"))))
