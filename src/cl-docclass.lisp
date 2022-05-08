@@ -140,5 +140,6 @@ $ java -cp ./igo-0.4.5.jar net.reduls.igo.bin.BuildDic ipadic mecab-ipadic-2.7.0
 
 (defun make-tf-idf-list-from-files (files &key (infrequent-threshold 10))
   (let ((word-hash (make-word-hash-from-files files :infrequent-threshold infrequent-threshold)))
-    (make-tf-idf-list (mapcar #'alexandria:read-file-into-string files)
-                      word-hash)))
+    (values (make-tf-idf-list (mapcar #'alexandria:read-file-into-string files)
+                              word-hash)
+            word-hash)))

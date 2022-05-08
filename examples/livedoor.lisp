@@ -26,8 +26,10 @@
 
 ;;; Make input data (List of sparse vectors)
 
-(defparameter tf-idf-list
-  (make-tf-idf-list-from-files *livedoor-data-files* :infrequent-threshold 10))
+(multiple-value-bind (tf-idfs wh)
+    (make-tf-idf-list-from-files *livedoor-data-files* :infrequent-threshold 10)
+  (defparameter tf-idf-list tf-idfs)
+  (defparameter *word-hash* wh))
 ;; 10.589 seconds of real time
 
 ;; ;; Actual dimension histogram
